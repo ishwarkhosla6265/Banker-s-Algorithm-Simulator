@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Banker's Algorithm Simulator | OS Project</title>
+  <meta name="description"
+    content="Interactive Banker's Algorithm Simulator with step-by-step visualization, resource request testing, and deadlock detection." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body class="dark-theme" id="app-body">
+
+  <!-- ==================== SIDEBAR ==================== -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <span class="logo-icon">⬡</span>
+        <span class="logo-text">BankSim</span>
+      </div>
+      <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle Sidebar">☰</button>
+    </div>
+
+    <nav class="sidebar-nav" role="navigation">
+      <div class="nav-section-label">Navigation</div>
+      <ul>
+        <li><a href="#" class="nav-link active" data-section="simulator" id="nav-simulator">
+            <span class="nav-icon">⚙</span><span class="nav-label">Simulator</span>
+          </a></li>
+        <li><a href="#" class="nav-link" data-section="request" id="nav-request">
+            <span class="nav-icon">📤</span><span class="nav-label">Request Sim</span>
+            <span class="nav-badge" id="requestBadge">NEW</span>
+          </a></li>
+        <li><a href="#" class="nav-link" data-section="trace" id="nav-trace">
+            <span class="nav-icon">📋</span><span class="nav-label">Full Trace</span>
+          </a></li>
+        <li><a href="#" class="nav-link" data-section="theory" id="nav-theory">
+            <span class="nav-icon">📖</span><span class="nav-label">Theory</span>
+          </a></li>
+        <li><a href="#" class="nav-link" data-section="examples" id="nav-examples">
+            <span class="nav-icon">💡</span><span class="nav-label">Examples</span>
+          </a></li>
+      </ul>
+
+      <div class="nav-section-label" style="margin-top:18px;">Quick Actions</div>
+      <ul>
+        <li><a href="#" class="nav-link nav-action" id="navRandom">
+            <span class="nav-icon">🎲</span><span class="nav-label">Random Data</span>
+          </a></li>
+        <li><a href="#" class="nav-link nav-action" id="navReset">
+            <span class="nav-icon">↺</span><span class="nav-label">Reset All</span>
+          </a></li>
+        <li><a href="#" class="nav-link nav-action" id="navPrint">
+            <span class="nav-icon">🖨</span><span class="nav-label">Print / Export</span>
+          </a></li>
+      </ul>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="theme-btn" id="themeToggle" aria-label="Toggle theme">
+        <span class="theme-icon" id="themeIcon">☀</span>
+        <span class="theme-label">Light Mode</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ==================== MAIN CONTENT ==================== -->
+  <main class="main-content" id="mainContent">
+
+    <!-- PAGE HEADER -->
+    <header class="page-header">
+      <div class="header-left">
+        <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open Menu">☰</button>
+        <div>
+          <h1 class="page-title">Banker's Algorithm Simulator</h1>
+          <p class="page-subtitle">Operating Systems — Deadlock Avoidance &amp; Safety Analysis</p>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="header-stats">
+          <div class="hstat" id="hstatProcesses"><span class="hstat-val">—</span><span
+              class="hstat-label">Processes</span></div>
+          <div class="hstat" id="hstatResources"><span class="hstat-val">—</span><span
+              class="hstat-label">Resources</span></div>
+          <div class="hstat" id="hstatState"><span class="hstat-val">—</span><span class="hstat-label">State</span>
+          </div>
+        </div>
+        <span class="status-badge" id="systemStatus">System Idle</span>
+      </div>
+    </header>
+
+    <!-- ==================== SECTION: SIMULATOR ==================== -->
+    <section class="section active" id="section-simulator">
+
+      <!-- CONFIG CARD -->
+      <div class="card" id="config-card">
+        <div class="card-header">
+          <h2 class="card-title"><span class="card-icon">⚙</span> System Configuration</h2>
+          <p class="card-desc">Define the number of processes and resource types to initialize simulation matrices.</p>
+        </div>
+        <div class="card-body config-grid">
+          <div class="input-group">
+            <label for="numProcesses" class="input-label">Processes (n)
+              <span class="tooltip-anchor" tabindex="0">?<span class="tooltip-box">Number of processes (P0 to Pn-1).
+                  Range: 1–10.</span></span>
+            </label>
+            <input type="number" id="numProcesses" class="input-field" min="1" max="10" value="5" />
+            <span class="input-help">1 to 10 processes</span>
+          </div>
+          <div class="input-group">
+            <label for="numResources" class="input-label">Resource Types (m)
+              <span class="tooltip-anchor" tabindex="0">?<span class="tooltip-box">Number of distinct resource types (A,
+                  B, C…). Range: 1–8.</span></span>
+            </label>
+            <input type="number" id="numResources" class="input-field" min="1" max="8" value="3" />
+            <span class="input-help">1 to 8 resource types</span>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" id="initBtn">⚡ Initialize</button>
+            <button class="btn btn-ghost" id="randomBtn">🎲 Random</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- MATRICES CARD -->
+      <div class="card hidden" id="matrices-card">
+        <div class="card-header">
+          <h2 class="card-title"><span class="card-icon">📊</span> Resource Matrices
+            <span class="card-help-group">
+              <span id="matrixLegend" class="legend-toggle" tabindex="0">Show Legend ▾</span>
+            </span>
+          </h2>
+          <p class="card-desc">Fill all matrices below. The Need matrix is computed automatically (Max − Allocation).
+          </p>
+        </div>
+        <!-- Legend Panel -->
+        <div class="legend-panel hidden" id="legendPanel">
+          <div class="legend-items">
+            <div class="legend-item"><span class="legend-dot green"></span> Process can be satisfied (Need ≤ Work)</div>
+            <div class="legend-item"><span class="legend-dot red"></span> Process cannot proceed (Need > Work)</div>
+            <div class="legend-item"><span class="legend-dot orange"></span> Currently being evaluated</div>
+            <div class="legend-item"><span class="legend-dot grey"></span> Already finished</div>
+            <div class="legend-item"><span class="legend-dot neon2"></span> Need matrix cell (auto-computed)</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <!-- Available -->
+          <div class="matrix-section">
+            <h3 class="matrix-title">Available Resources
+              <span class="tooltip-anchor" tabindex="0">?<span class="tooltip-box">Instances of each resource currently
+                  available to the system. Available[j] = Total[j] − ΣAllocation[i][j].</span></span>
+            </h3>
+            <div class="available-grid" id="availableGrid"></div>
+          </div>
+
+          <!-- Three matrices -->
+          <div class="matrices-row">
+            <div class="matrix-block" id="allocBlock">
+              <h3 class="matrix-title">Allocation Matrix
+                <span class="tooltip-anchor" tabindex="0">?<span class="tooltip-box">Resources currently held by each
+                    process.</span></span>
+              </h3>
+              <div class="matrix-scroll">
+                <table class="matrix-table" id="allocationTable">
+                  <thead>
+                    <tr id="allocationHeader"></tr>
+                  </thead>
+                  <tbody id="allocationBody"></tbody>
+                </table>
+              </div>
+            </div>
+            <div class="matrix-block" id="maxBlock">
+              <h3 class="matrix-title">Maximum Matrix
+                <span class="tooltip-anchor" tabindex="0">?<span class="tooltip-box">Maximum resources each process may
+                    ever request.</span></span>
+              </h3>
+              <div class="matrix-scroll">
+                <table class="matrix-table" id="maxTable">
+                  <thead>
+                    <tr id="maxHeader"></tr>
+                  </thead>
+                  <tbody id="maxBody"></tbody>
+                </table>
+              </div>
+            </div>
+            <div class="matrix-block" id="needBlock">
+              <h3 class="matrix-title">Need Matrix <span class="badge-computed">Auto</span>
+                <span class="tooltip-anchor" tabindex="0">?<span class="tooltip-box">Need[i][j] = Max[i][j] −
+                    Allocation[i][j]. Resources still needed by each process.</span></span>
+              </h3>
+              <div class="matrix-scroll">
+                <table class="matrix-table" id="needTable">
+                  <thead>
+                    <tr id="needHeader"></tr>
+                  </thead>
+                  <tbody id="needBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Controls -->
+          <div class="btn-row control-row">
+            <button class="btn btn-primary" id="checkSafetyBtn">🔍 Check Safety</button>
+            <button class="btn btn-accent" id="stepByStepBtn">▶ Step-by-Step</button>
+            <button class="btn btn-warn" id="deadlockBtn">⛔ Detect Deadlock</button>
+            <button class="btn btn-ghost" id="resetBtn">↺ Reset</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- RESULT CARD -->
+      <div class="card hidden" id="result-card">
+        <div class="card-header">
+          <h2 class="card-title"><span class="card-icon">🎯</span> Safety Analysis Result</h2>
+        </div>
+        <div class="card-body">
+          <div class="result-banner" id="resultBanner">
+            <div class="result-icon" id="resultIcon"></div>
+            <div class="result-text">
+              <div class="result-state" id="resultState"></div>
+              <div class="result-detail" id="resultDetail"></div>
+            </div>
+          </div>
+          <div class="safe-sequence-box" id="safeSequenceBox"></div>
+
+          <!-- Stats row -->
+          <div class="stats-row" id="statsRow"></div>
+        </div>
+      </div>
+
+      <!-- PROCESS TIMELINE -->
+      <div class="card hidden" id="timelineCard">
+        <div class="card-header">
+          <h2 class="card-title"><span class="card-icon">⏱</span> Process State Timeline</h2>
+          <p class="card-desc">Shows how each process transitions through states during the safety algorithm.</p>
+        </div>
+        <div class="card-body">
+          <div class="timeline-legend">
+            <span class="tl-leg waiting">● Waiting</span>
+            <span class="tl-leg running">● Running</span>
+            <span class="tl-leg done">● Completed</span>
+            <span class="tl-leg blocked">● Blocked</span>
+          </div>
+          <div class="timeline-container" id="timelineContainer"></div>
+        </div>
+      </div>
+
+      <!-- STEPWISE SIMULATION PANEL -->
+      <div class="card hidden" id="stepPanel">
+        <div class="card-header">
+          <h2 class="card-title"><span class="card-icon">🔬</span> Step-by-Step Simulation</h2>
+          <div class="step-controls">
+            <button class="btn btn-sm btn-ghost" id="prevStepBtn" disabled>◀ Prev</button>
+            <span class="step-counter" id="stepCounter">Step 0 / 0</span>
+            <button class="btn btn-sm btn-primary" id="nextStepBtn" disabled>Next ▶</button>
+            <button class="btn btn-sm btn-accent" id="autoPlayBtn">⏩ Auto Play</button>
+            <select class="speed-select" id="speedSelect" title="Auto play speed">
+              <option value="1500">Slow</option>
+              <option value="900" selected>Normal</option>
+              <option value="400">Fast</option>
+              <option value="150">Very Fast</option>
+            </select>
+          </div>
+        </div>
+        <div class="card-body step-body">
+          <!-- Left: log entries -->
+          <div class="step-panel-left">
+            <div class="step-log-header">Iteration Log</div>
+            <div class="step-log" id="stepLog"></div>
+          </div>
+          <!-- Right: live State Table -->
+          <div class="step-panel-right">
+            <div class="step-log-header">Current State Snapshot</div>
+            <div class="state-snapshot" id="stateSnapshot"></div>
+            <div class="work-vector-display" id="workVectorDisplay"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COMPARISON PANEL per step -->
+      <div class="card hidden" id="comparisonCard">
+        <div class="card-header">
+          <h2 class="card-title"><span class="card-icon">⚖</span> Need vs Work Comparison (Current Step)</h2>
+          <p class="card-desc">Shows the element-wise comparison Need[i][j] ≤ Work[j] for the process being evaluated.
+          </p>
+        </div>
+        <div class="card-body">
+          <div class="comparison-container" id="comparisonContainer"></div>
+        </div>
+      </div>
+
+      <!-- FLOW VISUALIZATION -->
+      <div class="card hidden" id="flowCard">
+        <div class="card-header">
+          <h2 class="card-title"><span class="card-icon">🌐</span> Execution Flow &amp; Resource Graph</h2>
+        </div>
+        <div class="card-body">
+          <div class="flow-container" id="flowContainer"></div>
+          <div class="resource-graph" id="resourceGraph"></div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ==================== SECTION: REQUEST SIMULATOR ==================== -->
+    <section class="section" id="section-request">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title"><span class="card-icon">📤</span> Resource Request Simulator</h2>
+          <p class="card-desc">Simulate a resource request from a specific process and check if it can be safely granted
+            using the Banker's Algorithm Resource-Request Algorithm.</p>
+        </div>
+        <div class="card-body">
+          <div class="request-notice" id="requestNotice">
+            ℹ Run the Safety Check on the Simulator tab first to enable resource requests.
+          </div>
+          <div class="request-form hidden" id="requestForm">
+            <div class="request-config">
+              <div class="input-group">
+                <label class="input-label">Process ID
+                  <span class="tooltip-anchor" tabindex="0">?<span class="tooltip-box">Which process is making the
+                      request.</span></span>
+                </label>
+                <select class="input-field select-field" id="requestProcess"></select>
+              </div>
+              <div class="input-group" id="requestVectorGroup">
+                <label class="input-label">Request Vector
+                  <span class="tooltip-anchor" tabindex="0">?<span class="tooltip-box">Number of instances of each
+                      resource type being requested.</span></span>
+                </label>
+                <div class="request-vector" id="requestVector"></div>
+              </div>
+              <div class="btn-row">
+                <button class="btn btn-primary" id="runRequestBtn">🔍 Check Request</button>
+                <button class="btn btn-ghost" id="clearRequestBtn">✕ Clear</button>
+              </div>
+            </div>
+
+            <div class="request-result hidden" id="requestResult">
+              <div class="request-result-banner" id="requestResultBanner"></div>
+              <div class="request-steps" id="requestSteps"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Request Algorithm explanation -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title"><span class="card-icon">📐</span> Resource-Request Algorithm Steps</h2>
+        </div>
+        <div class="card-body">
+          <ol class="algo-steps">
+            <li><span class="step-num">1</span>
+              <div><strong>Validate:</strong> Check <code>Request[i] ≤ Need[i]</code>. If false → error (process
+                exceeded max claim).</div>
+            </li>
+            <li><span class="step-num">2</span>
+              <div><strong>Check availability:</strong> Check <code>Request[i] ≤ Available</code>. If false → process
+                must wait.</div>
+            </li>
+            <li><span class="step-num">3</span>
+              <div><strong>Pretend to allocate:</strong> Temporarily update:<br />
+                <code>Available = Available − Request[i]</code><br />
+                <code>Allocation[i] = Allocation[i] + Request[i]</code><br />
+                <code>Need[i] = Need[i] − Request[i]</code>
+              </div>
+            </li>
+            <li><span class="step-num">4</span>
+              <div><strong>Safety check:</strong> Run the Safety Algorithm on the new state. If safe → grant request.
+                Otherwise → rollback all changes.</div>
+            </li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION: FULL TRACE ==================== -->
+    <section class="section" id="section-trace">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title"><span class="card-icon">📋</span> Complete Algorithm Trace Table</h2>
+          <p class="card-desc">Full pass-by-pass trace showing Work vector, Finish flags, and process decisions for
+            every iteration.</p>
+        </div>
+        <div class="card-body">
+          <div class="trace-notice hidden" id="traceNotice">
+            ℹ Run the Safety Check or Step-by-Step simulation first to generate the trace.
+          </div>
+          <div id="traceContent">
+            <div class="trace-placeholder">
+              <div class="trace-placeholder-icon">📋</div>
+              <div>Run simulation to see the full algorithm trace here.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION: THEORY ==================== -->
+    <section class="section" id="section-theory">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title"><span class="card-icon">📖</span> Banker's Algorithm — Theory</h2>
+        </div>
+        <div class="card-body theory-body">
+          <div class="theory-intro">
+            <p>The <strong>Banker's Algorithm</strong>, developed by Edsger Dijkstra in 1965, is a <em>deadlock
+                avoidance</em> algorithm. Like a banker who lends money only when they can still satisfy all customers'
+              max needs, the OS grants resources only when it can guarantee a <strong>safe execution sequence</strong>
+              exists.</p>
+          </div>
+
+          <div class="theory-grid">
+            <div class="theory-card green">
+              <div class="theory-card-icon">✅</div>
+              <h3>Safe State</h3>
+              <p>A state where a sequence <code>P1, P2, …, Pn</code> exists such that each process can obtain resources,
+                complete, and release for the next. All processes finish eventually.</p>
+            </div>
+            <div class="theory-card red">
+              <div class="theory-card-icon">⚠</div>
+              <h3>Unsafe State</h3>
+              <p>No safe sequence exists. The system <em>may</em> deadlock depending on future requests — but is not
+                guaranteed to deadlock yet.</p>
+            </div>
+            <div class="theory-card orange">
+              <div class="theory-card-icon">🔴</div>
+              <h3>Deadlock</h3>
+              <p>Every process in a set waits for a resource held by another process in that set — circular wait with no
+                resolution.</p>
+            </div>
+          </div>
+
+          <div class="theory-section">
+            <h3 class="theory-section-title">Data Structures</h3>
+            <div class="ds-grid">
+              <div class="ds-item"><span class="ds-label">n</span><span class="ds-desc">Number of processes</span></div>
+              <div class="ds-item"><span class="ds-label">m</span><span class="ds-desc">Number of resource types</span>
+              </div>
+              <div class="ds-item"><span class="ds-label">Available[j]</span><span class="ds-desc">Available instances
+                  of resource j</span></div>
+              <div class="ds-item"><span class="ds-label">Allocation[i][j]</span><span class="ds-desc">Resources
+                  allocated to process i</span></div>
+              <div class="ds-item"><span class="ds-label">Max[i][j]</span><span class="ds-desc">Maximum demand of
+                  process i</span></div>
+              <div class="ds-item"><span class="ds-label">Need[i][j]</span><span class="ds-desc">= Max[i][j] −
+                  Allocation[i][j]</span></div>
+            </div>
+          </div>
+
+          <div class="theory-section">
+            <h3 class="theory-section-title">Safety Algorithm</h3>
+            <ol class="algo-steps">
+              <li><span class="step-num">1</span>
+                <div><strong>Initialize:</strong> <code>Work = Available</code>, <code>Finish[i] = false</code> for all
+                  i.</div>
+              </li>
+              <li><span class="step-num">2</span>
+                <div><strong>Find:</strong> Process i where <code>Finish[i] == false</code> and
+                  <code>Need[i] ≤ Work</code>.</div>
+              </li>
+              <li><span class="step-num">3</span>
+                <div><strong>Simulate:</strong> <code>Work = Work + Allocation[i]</code>, set
+                  <code>Finish[i] = true</code>. Go to step 2.</div>
+              </li>
+              <li><span class="step-num">4</span>
+                <div><strong>Conclude:</strong> If all <code>Finish[i] == true</code> → <span
+                    class="text-green">Safe</span>. Else → <span class="text-red">Unsafe</span>.</div>
+              </li>
+            </ol>
+          </div>
+
+          <div class="theory-section">
+            <h3 class="theory-section-title">Resource-Request Algorithm</h3>
+            <ol class="algo-steps">
+              <li><span class="step-num">1</span>
+                <div>If <code>Request[i] &gt; Need[i]</code> → error (exceeds max claim).</div>
+              </li>
+              <li><span class="step-num">2</span>
+                <div>If <code>Request[i] &gt; Available</code> → process must wait.</div>
+              </li>
+              <li><span class="step-num">3</span>
+                <div>Tentatively allocate: update Available, Allocation, Need.</div>
+              </li>
+              <li><span class="step-num">4</span>
+                <div>Run safety algorithm. If safe → grant. Else → rollback.</div>
+              </li>
+            </ol>
+          </div>
+
+          <div class="theory-section">
+            <h3 class="theory-section-title">Key Properties</h3>
+            <ul class="key-points">
+              <li>Every safe state is deadlock-free (but not vice versa).</li>
+              <li>Time complexity: <strong>O(n² × m)</strong> for the safety algorithm.</li>
+              <li>Requires processes to declare maximum resource usage in advance.</li>
+              <li>Can be overly conservative — may deny requests that would not cause deadlock.</li>
+              <li>Number of processes and resources must remain fixed.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION: EXAMPLES ==================== -->
+    <section class="section" id="section-examples">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title"><span class="card-icon">💡</span> Worked Examples</h2>
+          <p class="card-desc">Load classic textbook examples directly into the simulator with a single click.</p>
+        </div>
+        <div class="card-body">
+          <div class="examples-grid">
+            <div class="example-card">
+              <div class="example-tag safe">SAFE</div>
+              <h3 class="example-title">Classic 5-Process Example</h3>
+              <p class="example-desc">Standard textbook example with 5 processes and 3 resource types (A, B, C).</p>
+              <div class="example-preview">
+                <div class="preview-row"><span class="preview-label">Processes:</span><span>5 (P0–P4)</span></div>
+                <div class="preview-row"><span class="preview-label">Resources:</span><span>3 types (A, B, C)</span>
+                </div>
+                <div class="preview-row"><span class="preview-label">Safe Seq:</span><span>P1→P3→P4→P0→P2</span></div>
+              </div>
+              <button class="btn btn-primary btn-full" onclick="loadExample(0)">Load Example</button>
+            </div>
+            <div class="example-card">
+              <div class="example-tag unsafe">UNSAFE</div>
+              <h3 class="example-title">Deadlock Scenario</h3>
+              <p class="example-desc">A configuration where no safe sequence exists and deadlock is inevitable.</p>
+              <div class="example-preview">
+                <div class="preview-row"><span class="preview-label">Processes:</span><span>4 (P0–P3)</span></div>
+                <div class="preview-row"><span class="preview-label">Resources:</span><span>3 types</span></div>
+                <div class="preview-row"><span class="preview-label">Result:</span><span class="text-red">Unsafe
+                    State</span></div>
+              </div>
+              <button class="btn btn-accent btn-full" onclick="loadExample(1)">Load Example</button>
+            </div>
+            <div class="example-card">
+              <div class="example-tag safe">SAFE</div>
+              <h3 class="example-title">Simple 3-Process Demo</h3>
+              <p class="example-desc">Minimal example — great for understanding the basics of the algorithm
+                step-by-step.</p>
+              <div class="example-preview">
+                <div class="preview-row"><span class="preview-label">Processes:</span><span>3 (P0–P2)</span></div>
+                <div class="preview-row"><span class="preview-label">Resources:</span><span>2 types</span></div>
+                <div class="preview-row"><span class="preview-label">Safe Seq:</span><span>P2→P0→P1</span></div>
+              </div>
+              <button class="btn btn-primary btn-full" onclick="loadExample(2)">Load Example</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title"><span class="card-icon">📈</span> Algorithm Analysis</h2>
+        </div>
+        <div class="card-body">
+          <div class="analysis-grid">
+            <div class="analysis-item">
+              <div class="analysis-metric">O(n²×m)</div>
+              <div class="analysis-label">Time Complexity</div>
+            </div>
+            <div class="analysis-item">
+              <div class="analysis-metric">O(n×m)</div>
+              <div class="analysis-label">Space Complexity</div>
+            </div>
+            <div class="analysis-item">
+              <div class="analysis-metric">Dijkstra</div>
+              <div class="analysis-label">Invented By</div>
+            </div>
+            <div class="analysis-item">
+              <div class="analysis-metric">1965</div>
+              <div class="analysis-label">Year Proposed</div>
+            </div>
+          </div>
+          <div class="pros-cons-grid">
+            <div class="pros">
+              <h4>✅ Advantages</h4>
+              <ul>
+                <li>Guarantees deadlock avoidance</li>
+                <li>Higher resource utilization than prevention</li>
+                <li>Safe sequence is deterministic</li>
+                <li>Well-studied and provably correct</li>
+              </ul>
+            </div>
+            <div class="cons">
+              <h4>⚠ Limitations</h4>
+              <ul>
+                <li>Requires advance declaration of max needs</li>
+                <li>May be overly conservative (false denials)</li>
+                <li>Fixed number of processes required</li>
+                <li>High overhead for very large systems</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- TOAST CONTAINER -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- MOBILE OVERLAY -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <script src="script.js"></script>
+</body>
+
+</html>
